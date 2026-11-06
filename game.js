@@ -40,6 +40,33 @@ const overlayTitle = document.getElementById('overlay-title');
 const overlayScore = document.getElementById('overlay-score');
 const restartBtn = document.getElementById('restart-btn');
 
+const themeToggle = document.getElementById('theme-toggle');
+const themeLabel = document.getElementById('theme-label');
+const THEME_KEY = 'tetris-theme';
+let gridColor = '#22222e';
+let highlightColor = 'rgba(255,255,255,0.12)';
+
+function setTheme(theme, save) {
+  const isLight = theme === 'light';
+  document.documentElement.dataset.theme = isLight ? 'light' : 'dark';
+  themeToggle.setAttribute('aria-checked', String(isLight));
+  themeLabel.textContent = isLight ? 'Claro' : 'Oscuro';
+  const style = getComputedStyle(document.documentElement);
+  gridColor = style.getPropertyValue('--grid').trim() || gridColor;
+  highlightColor = style.getPropertyValue('--block-highlight').trim() || highlightColor;
+  if (save) {
+    try { localStorage.setItem(THEME_KEY, isLight ? 'light' : 'dark'); } catch (e) { /* sin almacenamiento */ }
+  }
+  // Repintar (también en pausa, cuando el loop está detenido)
+  if (current && next) { draw(); drawNext(); }
+}
+
+function loadTheme() {
+  let saved = null;
+  try { saved = localStorage.getItem(THEME_KEY); } catch (e) { /* sin almacenamiento */ }
+  setTheme(saved === 'light' ? 'light' : 'dark', false);
+}
+
 let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 
 function createBoard() {
@@ -163,13 +190,13 @@ function drawBlock(context, x, y, colorIndex, size, alpha) {
   context.fillStyle = color;
   context.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
   // highlight
-  context.fillStyle = 'rgba(255,255,255,0.12)';
+  context.fillStyle = highlightColor;
   context.fillRect(x * size + 1, y * size + 1, size - 2, 4);
   context.globalAlpha = 1;
 }
 
 function drawGrid() {
-  ctx.strokeStyle = '#22222e';
+  ctx.strokeStyle = gridColor;
   ctx.lineWidth = 0.5;
   for (let c = 1; c < COLS; c++) {
     ctx.beginPath();
@@ -301,4 +328,10 @@ document.addEventListener('keydown', e => {
 
 restartBtn.addEventListener('click', init);
 
+themeToggle.addEventListener('click', () => {
+  setTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light', true);
+  themeToggle.blur(); // evita que Space/Enter vuelvan a activar el botón
+});
+
+loadTheme();
 init();
