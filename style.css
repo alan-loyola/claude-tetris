@@ -227,7 +227,7 @@ kbd {
   color: var(--accent);
 }
 
-#restart-btn {
+#restart-btn, .primary-btn {
   margin-top: 8px;
   background: var(--accent);
   color: var(--on-accent);
@@ -241,6 +241,84 @@ kbd {
   transition: background 0.15s;
 }
 
-#restart-btn:hover {
+#restart-btn:hover, .primary-btn:hover {
   background: var(--accent-hover);
 }
+
+/* ---- Records ---- */
+#start-screen { z-index: 2; background: var(--bg); }
+
+.start-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: 6px;
+  color: var(--accent);
+}
+
+.records { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+
+.records.hidden, .name-form.hidden, .link-btn.hidden { display: none; }
+
+.records-list {
+  list-style: none;
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+}
+
+.records-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: var(--text);
+}
+
+.records-list .rec-name { flex: 1; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.records-list .rec-score { color: var(--accent); font-weight: 700; }
+.records-list li.empty { color: var(--muted); justify-content: center; }
+
+.records-list li.record-new {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+.records-list li.record-new .rec-score { color: var(--on-accent); }
+
+.records-stats { font-size: 12px; color: var(--muted); }
+
+.name-form { display: flex; flex-direction: column; gap: 6px; align-items: center; font-size: 13px; color: var(--accent); }
+.name-row { display: flex; gap: 6px; }
+.name-form input {
+  width: 140px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--board-bg);
+  color: var(--text);
+  user-select: text;
+}
+.name-form button {
+  background: var(--accent);
+  color: var(--on-accent);
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.link-btn:hover { color: var(--danger); }
+#restart-btn.hidden { display: none; }
