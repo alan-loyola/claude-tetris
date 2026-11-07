@@ -133,7 +133,7 @@ function clearLines() {
   if (cleared) {
     lines += cleared;
     score += (LINE_SCORES[cleared] || 0) * level;
-    level = Math.floor(lines / 10) + 1;
+    level = gameStartLevel + Math.floor(lines / 10);
     dropInterval = Math.max(100, 1000 - (level - 1) * 90);
     updateHUD();
   }
@@ -253,19 +253,58 @@ function endGame() {
   overlay.classList.remove('hidden');
 }
 
+// ---- Menú de pausa ----
+const pauseMenu = document.getElementById('pause-menu');
+const pauseMain = document.getElementById('pause-main');
+const pauseControls = document.getElementById('pause-controls');
+const startLevelSel = document.getElementById('start-level');
+const START_LEVEL_KEY = 'tetris-start-level';
+const MAX_START_LEVEL = 10;
+let startLevel = 1;     // elegido en el menú (próxima partida)
+let gameStartLevel = 1; // nivel base de la partida en curso
+
+function loadStartLevel() {
+  let saved = null;
+  try { saved = parseInt(localStorage.getItem(START_LEVEL_KEY), 10); } catch (e) { /* sin almacenamiento */ }
+  startLevel = saved >= 1 && saved <= MAX_START_LEVEL ? saved : 1;
+  for (let i = 1; i <= MAX_START_LEVEL; i++) startLevelSel.add(new Option(i, i));
+  startLevelSel.value = startLevel;
+}
+
+function showPauseScreen(controls) {
+  pauseMain.classList.toggle('hidden', controls);
+  pauseControls.classList.toggle('hidden', !controls);
+  document.getElementById(controls ? 'pause-back' : 'pause-resume').focus();
+}
+
+function hidePauseMenu() {
+  pauseMenu.classList.add('hidden');
+  if (pauseMenu.contains(document.activeElement)) document.activeElement.blur();
+}
+
 function togglePause() {
   if (gameOver) return;
   paused = !paused;
   if (!paused) {
+    hidePauseMenu();
+    dropAccum = 0;
     lastTime = performance.now();
-    loop(lastTime);
+    animId = requestAnimationFrame(loop);
   } else {
     cancelAnimationFrame(animId);
-    overlayTitle.textContent = 'PAUSA';
-    overlayScore.textContent = '';
-    overlay.classList.remove('hidden');
+    pauseMenu.classList.remove('hidden');
+    showPauseScreen(false);
   }
 }
+
+document.getElementById('pause-resume').addEventListener('click', togglePause);
+document.getElementById('pause-restart').addEventListener('click', init);
+document.getElementById('pause-controls-btn').addEventListener('click', () => showPauseScreen(true));
+document.getElementById('pause-back').addEventListener('click', () => showPauseScreen(false));
+startLevelSel.addEventListener('change', () => {
+  startLevel = parseInt(startLevelSel.value, 10) || 1;
+  try { localStorage.setItem(START_LEVEL_KEY, String(startLevel)); } catch (e) { /* sin almacenamiento */ }
+});
 
 function loop(ts) {
   const dt = ts - lastTime;
@@ -287,23 +326,38 @@ function init() {
   board = createBoard();
   score = 0;
   lines = 0;
-  level = 1;
+  gameStartLevel = startLevel;
+  level = gameStartLevel;
   paused = false;
   gameOver = false;
-  dropInterval = 1000;
+  dropInterval = Math.max(100, 1000 - (level - 1) * 90);
   dropAccum = 0;
   lastTime = performance.now();
   next = randomPiece();
   spawn();
   updateHUD();
   overlay.classList.add('hidden');
+  hidePauseMenu();
   cancelAnimationFrame(animId);
   animId = requestAnimationFrame(loop);
 }
 
 document.addEventListener('keydown', e => {
-  if (e.code === 'KeyP') { togglePause(); return; }
-  if (paused || gameOver) return;
+  if (e.code === 'KeyP' || e.code === 'Escape') {
+    // Esc dentro del selector solo cierra su desplegable
+    if (e.code === 'Escape' && e.target === startLevelSel) return;
+    e.preventDefault();
+    if (!e.repeat) togglePause();
+    return;
+  }
+  if (paused) {
+    // Menú de pausa abierto: bloquear teclas de juego y evitar cambios accidentales
+    // (salvo sobre los controles del propio menú, para poder usarlos con teclado)
+    if (!pauseMenu.contains(e.target) &&
+        ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space'].includes(e.code)) e.preventDefault();
+    return;
+  }
+  if (gameOver) return;
   switch (e.code) {
     case 'ArrowLeft':
       if (!collide(current.shape, current.x - 1, current.y)) current.x--;
@@ -334,4 +388,5 @@ themeToggle.addEventListener('click', () => {
 });
 
 loadTheme();
+loadStartLevel();
 init();
